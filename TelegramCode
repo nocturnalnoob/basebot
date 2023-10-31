@@ -1,0 +1,180 @@
+import datetime,time
+
+import telepot
+from pydub import AudioSegment
+from pydub.playback import _play_with_simpleaudio
+
+
+import socket
+from signal import signal, SIGTERM, SIGHUP, pause
+from rpi_lcd import LCD
+
+from gpiozero import LED
+
+from signal import pause
+
+import RPi.GPIO as GPIO
+
+from telepot.loop import MessageLoop
+
+import geocoder
+
+g = geocoder.ip('me')
+
+import RPi_I2C_driver
+
+mylcd = RPi_I2C_driver.lcd()
+# test 2
+ # 2 sec delay
+
+
+
+
+
+
+led = 17
+
+now = datetime.datetime.now()
+
+GPIO.setmode(GPIO.BCM)
+
+GPIO_TRIGGER = 23
+GPIO_ECHO    = 24
+
+GPIO.setup(GPIO_TRIGGER,GPIO.OUT)  # Trigger
+GPIO.setup(GPIO_ECHO,GPIO.IN)      # Echo
+
+# Set trigger to False (Low)
+GPIO.output(GPIO_TRIGGER, False)
+time.sleep(0.5)
+
+GPIO.setwarnings(False)
+
+ #LED
+
+GPIO.setup(led, GPIO.OUT)
+
+GPIO.output(led, 0) #Off initially
+
+hostname = socket.gethostname()
+
+IPAddr = socket.gethostbyname(hostname)
+
+
+
+def action(msg):
+
+    chat_id = msg['chat']['id']
+
+    command = msg['text']
+
+
+    print ('Received: %s' % command)
+
+
+
+    if 'on' in command:
+
+            GPIO.output(led, 1)
+    
+     
+    elif 'off' in command:
+
+            GPIO.output(led, 0)
+
+            
+            
+    elif command == '/hi':
+      
+        telegram_bot.sendMessage (chat_id, str("Your msg:))"))
+
+         
+    elif command == '/time':
+
+        telegram_bot.sendMessage(chat_id, str(now.year)+str("/")+str(now.month)+str("/")+str(now.hour)+str(":")+str(now.minute))
+
+    elif command == '/loc':
+
+        telegram_bot.sendMessage(chat_id, str(g.latlng))
+
+    elif command == '/ip':
+
+        telegram_bot.sendMessage(chat_id, str(hostname)+str(" : ")+str(IPAddr))
+        
+    elif command == '/distance':
+         GPIO.output(GPIO_TRIGGER, True)
+         time.sleep(0.00001)
+         GPIO.output(GPIO_TRIGGER, False)
+         start = time.time()
+
+         while GPIO.input(GPIO_ECHO)==0:
+           start = time.time()
+
+         while GPIO.input(GPIO_ECHO)==1:
+           stop = time.time()
+
+
+         elapsed = stop-start
+
+
+         distance = elapsed * 34300
+
+
+         distance = distance / 2
+
+         print ("Distance : %.1f" % distance)
+         
+         telegram_bot.sendMessage(chat_id, str("Distance is : ") + str(distance))
+
+    elif command == '/info':
+            
+        telegram_bot.sendMessage(chat_id, str("  Your msg:)) "))
+
+
+    elif command == '/logo':
+
+        telegram_bot.sendPhoto (chat_id, photo=open('PUlogo.png' , "rb" ))
+
+    elif command == '/file':
+
+        telegram_bot.sendDocument(chat_id, document=open('3333.py','rb'))
+
+    elif command == '/audio':
+
+        telegram_bot.sendAudio(chat_id, audio=open('muzmo_ru_The_Chainsmokers_-_Sick_Boy_58209075.mp3','rb'))
+
+    elif command == '/video':
+
+        telegram_bot.sendVideo(chat_id, video=open('Video sample.mp4','rb'))
+        
+  
+        
+
+    if command == '/url':
+
+        telegram_bot.sendMessage (chat_id, str("Your link"))
+    
+   
+        
+
+
+telegram_bot = telepot.Bot('##Your Bot token##')
+
+print (telegram_bot.getMe())
+
+
+MessageLoop(telegram_bot, action).run_as_thread()
+
+print ('Up and Running....')
+mylcd.lcd_display_string("Up and Running....", 1)
+mylcd.lcd_display_string("NO ERRORS", 2)
+
+pause()
+mylcd.lcd_clear()
+mylcd.lcd_display_string(telegram_bot.getMe(), 2)
+pause()
+mylcd.lcd_clear()
+
+while 1:
+
+    time.sleep(10)
